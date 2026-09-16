@@ -30,6 +30,16 @@ On multi-node deployments, the `swe_agents` server embeds these paths in command
 
 Servers that pre-staged setup trees next to the package (the layout before `cache_dir` existed, for example baked container images) keep using those trees **only while `cache_dir` is left at its default** — explicitly configuring `cache_dir` opts out, and removing the pre-staged trees migrates a default-config deployment. Contents accumulate across runs; both directories are safe to delete when no run is active.
 
+### Reusing component virtual environments
+
+`skip_venv_if_present=true` reuses a component's virtual environment only after Gym has successfully completed dependency installation. Servers sharing the same environment wait for that setup to finish before starting; different environments can install concurrently.
+
+Gym records successful setup in `.venv/.nemo-gym-setup-complete`. An existing environment without that marker runs dependency installation once, without Gym deleting the environment. Failed or interrupted setup leaves no completion marker, so the next invocation retries installation. Do not create the marker manually: the Python executable and activation script can exist before dependencies finish installing.
+
+For prebuilt environments, run `gym env prefetch` with the intended configuration using the updated Gym version before packaging them. Setup requires a writable environment and parent directory, and reuse must be able to open the sibling `.venv.setup.lock` file. The filesystem must support process-shared file locking. Keep the lock file in place while any Gym setup may be running.
+
+`skip_venv_if_present=false` still requests setup on every invocation. It serializes installers but does not protect an already-running server from a separately requested reinstall; stop servers using that environment before forcing setup.
+
 ---
 
 ## Path Resolution and External Roots
