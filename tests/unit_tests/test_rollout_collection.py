@@ -4152,6 +4152,7 @@ class TestEpisodeProcessorRouting:
 
         assert result == payload
         assert post.await_args.kwargs["server_name"] == "processor"
+        assert AGENT_REF_KEY_NAME not in rows[0]
         assert post.await_args.kwargs["json"] == {
             "episode_id": {"rollout_id": "0-0", "attempt": 0},
             "task": {
@@ -4210,7 +4211,7 @@ class TestEpisodeProcessorRouting:
         assert post.await_args.kwargs["server_name"] == "processor"
         assert post.await_args.kwargs["url_path"] == "/run"
         assert post.await_args.kwargs["json"] is row
-        assert AGENT_REF_KEY_NAME not in row
+        assert row[AGENT_REF_KEY_NAME] == {"name": "hermes"}
 
     async def test_processor_route_rejects_mismatched_resources_server(
         self,
